@@ -3,41 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pocket AOI</title>
+    <title>Pocket AOI Pro</title>
     <style>
         :root { --bg: #0f172a; --panel: #1e293b; --accent: #00f2ff; --ok: #10b981; --viga: #f43f5e; --text: #f8fafc; }
         body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
-        
         .sidebar { width: 320px; min-width: 320px; background: var(--panel); padding: 20px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #334155; overflow-y: auto; }
         .sidebar-right { border-left: 1px solid #334155; border-right: none; }
-        
         #viewport { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #000; }
         #container { position: relative; line-height: 0; }
         video { max-width: 100%; max-height: 80vh; display: block; }
         canvas#mainCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
-
-        .card { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
-        h4 { margin: 0 0 10px 0; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; }
-        
-        .status-hero { padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; font-size: 20px; border: 2px solid #334155; margin-bottom: 5px; }
+        .card { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 5px; }
+        h4 { margin: 0 0 10px 0; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+        .status-hero { padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; font-size: 20px; border: 2px solid #334155; }
         .pass { color: var(--ok); border-color: var(--ok); background: rgba(16, 185, 129, 0.1); }
         .fail { color: var(--viga); border-color: var(--viga); background: rgba(244, 63, 94, 0.1); }
-
-        /* Fikseeritud suurusega eelvaade */
-        .preview-container { width: 100%; height: 200px; display: flex; align-items: center; justify-content: center; background: #000; border: 1px solid #475569; overflow: hidden; position: relative; }
-        #previewCanvas { max-width: 100%; max-height: 100%; object-fit: contain; }
-
-        select, input[type="range"] { width: 100%; background: #0f172a; color: white; border: 1px solid #475569; padding: 5px; border-radius: 4px; margin-bottom: 8px; }
+        .preview-container { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: #000; border: 1px solid #475569; overflow: hidden; }
+        #previewCanvas { max-width: 100%; max-height: 100%; }
+        select, input[type="range"] { width: 100%; background: #0f172a; color: white; border: 1px solid #475569; padding: 5px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; }
         label { display: block; font-size: 11px; margin-bottom: 3px; color: #cbd5e1; }
-        
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .stat-box { text-align: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
-        
-        .inspect-btn { background: var(--accent); color: #000; padding: 15px; font-weight: 900; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-bottom: 5px; box-shadow: 0 4px 15px rgba(0,242,255,0.2); }
-        .inspect-btn:active { transform: scale(0.96); }
-        
-        .tool-settings { display: none; margin-top: 10px; border-top: 1px solid #334155; padding-top: 10px; }
+        .inspect-btn { background: var(--accent); color: #000; padding: 15px; font-weight: 900; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-bottom: 5px; width:100%; }
+        .tool-settings { display: none; }
         .visible { display: block; }
+        .limit-error { color: var(--viga) !important; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -45,64 +35,56 @@
 <div class="sidebar">
     <h3 style="margin:0; color:var(--accent); font-size: 18px;">POCKET AOI</h3>
     <div id="mainStatus" class="status-hero">OOTEL</div>
-    
     <button class="inspect-btn" onclick="inspect()">INSPEKTEERI</button>
 
     <div class="card">
-        <h4>Vali Tööriist</h4>
-        <select id="toolSelect" onchange="switchTool()">
-            <option value="presence">Presence Check (Pixels)</option>
-            <option value="blob">Blob Detector (Objects)</option>
-        </select>
-
-        <label><input type="checkbox" id="invertInput"> Inverteeri pilt</label>
+        <h4>Pildi Filtrid</h4>
+        <label><input type="checkbox" id="invertInput"> Inverteeri</label>
         <label>Threshold: <b id="thrVal">127</b></label>
         <input type="range" id="thrInput" min="0" max="255" value="127">
+        <label>Müra (Erode/Dilate): <b id="morphVal">0</b></label>
+        <input type="range" id="morphInput" min="-10" max="10" value="0">
+    </div>
 
-        <div id="presenceSettings" class="tool-settings visible">
-            <label>Pikslite limiit: <b id="limitVal">5000</b></label>
+    <div class="card">
+        <h4>Inspektsiooni Tööriist</h4>
+        <select id="toolSelect" onchange="switchTool()">
+            <option value="presence">Presence Check (Pixel Count)</option>
+            <option value="blob" selected>Blob Detector (Object Count)</option>
+        </select>
+        <div id="presenceSettings" class="tool-settings">
+            <label>Min. Pikslite arv: <b id="limitVal">5000</b></label>
             <input type="range" id="limitInput" min="0" max="10000" value="5000">
         </div>
-
-        <div id="blobSettings" class="tool-settings">
-            <label>Min Blob Area: <b id="minBlobVal">100</b></label>
-            <input type="range" id="minBlobInput" min="1" max="5000" value="100">
-            <label>Max Blobs: <b id="maxBlobCountVal">1</b></label>
-            <input type="range" id="maxBlobCountInput" min="1" max="20" value="1">
+        <div id="blobSettings" class="tool-settings visible">
+            <label>Min. Objekti pindala: <b id="minBlobVal">100</b></label>
+            <input type="range" id="minBlobInput" min="5" max="5000" value="100">
+            <label>Min objekti kogus: <b id="minCountVal">1</b></label>
+            <input type="range" id="minCountInput" min="0" max="20" value="1">
+            <label>Max objekti kogus: <b id="maxCountVal">1</b></label>
+            <input type="range" id="maxCountInput" min="1" max="50" value="1">
         </div>
-
-        <label>Erosion/Dilation: <b id="morphVal">0</b></label>
-        <input type="range" id="morphInput" min="-10" max="10" value="0">
-        
-        <button onclick="saveConfig()" style="background:#475569; color:white; border:none; padding:8px; width:100%; border-radius:4px; font-size:10px; cursor:pointer;">SALVESTA ROI & SEADED</button>
+        <button onclick="saveConfig()" style="background:#475569; color:white; border:none; padding:8px; width:100%; border-radius:4px; font-size:10px; cursor:pointer; margin-top:5px;">SALVESTA SEADED</button>
     </div>
 </div>
 
-<div id="viewport">
-    <div id="container">
-        <video id="v" autoplay playsinline muted></video>
-        <canvas id="mainCanvas"></canvas>
-    </div>
-</div>
+<div id="viewport"><div id="container"><video id="v" autoplay playsinline muted></video><canvas id="mainCanvas"></canvas></div></div>
 
 <div class="sidebar sidebar-right">
     <div class="card">
         <h4>Live Filter Preview</h4>
-        <div class="preview-container">
-            <canvas id="previewCanvas"></canvas>
-        </div>
-        <div id="pxLive" style="text-align:center; font-family:monospace; color:var(--accent); margin-top:8px; font-size:12px;">PX: 0 | Blobs: 0</div>
+        <div class="preview-container"><canvas id="previewCanvas"></canvas></div>
+        <div id="pxLive" style="text-align:center; font-family:monospace; color:var(--accent); margin-top:8px; font-size:12px;">PX: 0 | BLOBS: 0 / 0</div>
     </div>
-
     <div class="card">
         <h4>Statistika & FPY</h4>
         <div class="stat-grid">
-            <div class="stat-box"><span id="countTotal" style="font-weight:bold; color:var(--accent)">0</span><br><small>KOKKU</small></div>
-            <div class="stat-box"><span id="valFPY" style="font-weight:bold; color:var(--accent)">0%</span><br><small>FPY</small></div>
-            <div class="stat-box"><span id="countPass" style="color:var(--ok);font-weight:bold">0</span><br><small>PASS</small></div>
-            <div class="stat-box"><span id="countFail" style="color:var(--viga);font-weight:bold">0</span><br><small>FAIL</small></div>
+            <div class="stat-box"><span id="countTotal">0</span><br><small>KOKKU</small></div>
+            <div class="stat-box"><span id="valFPY">0%</span><br><small>FPY</small></div>
+            <div class="stat-box" style="color:var(--ok)"><span id="countPass">0</span><br><small>PASS</small></div>
+            <div class="stat-box" style="color:var(--viga)"><span id="countFail">0</span><br><small>FAIL</small></div>
         </div>
-        <button onclick="resetStats()" style="margin-top:10px; font-size:10px; background:transparent; border:1px solid #475569; color: #94a3b8; cursor:pointer; width:100%; padding:5px;">NULLI STATISTIKA</button>
+        <button onclick="resetStats()" style="margin-top:10px; font-size:10px; width:100%; cursor:pointer; background:transparent; border:1px solid #475569; color:white; padding:5px;">NULLI STATISTIKA</button>
     </div>
 </div>
 
@@ -113,23 +95,13 @@
     const pCanvas = document.getElementById('previewCanvas'), pCtx = pCanvas.getContext('2d');
     const hCanvas = document.createElement('canvas'), hCtx = hCanvas.getContext('2d');
 
-    let config = JSON.parse(localStorage.getItem('aoi_config')) || { 
-        roi: { x: 50, y: 50, w: 150, h: 150 }, 
-        thr: 127, morph: 0, limit: 5000, tool: 'presence', invert: false,
-        minBlob: 100, maxBlobCount: 1
-    };
+    let config = JSON.parse(localStorage.getItem('aoi_config')) || { roi: { x: 50, y: 50, w: 150, h: 150 }, thr: 127, morph: 0, limit: 5000, tool: 'blob', invert: false, minBlob: 100, minCount: 1, maxCount: 1 };
     let stats = JSON.parse(localStorage.getItem('aoi_stats')) || { total: 0, pass: 0, fail: 0 };
     let opencvReady = false, isDragging = false, isResizing = false, isOkNow = false;
     let offset = { x: 0, y: 0 }, blobCount = 0, currentPixels = 0;
+    let src, grey, thrMat;
 
-    let src, grey, thrMat, finalMat;
-
-    function cvLoaded() { 
-        opencvReady = true; 
-        loadUIValues();
-        switchTool();
-    }
-
+    function cvLoaded() { opencvReady = true; loadUIValues(); switchTool(); }
     function loadUIValues() {
         document.getElementById('thrInput').value = config.thr;
         document.getElementById('morphInput').value = config.morph;
@@ -137,9 +109,9 @@
         document.getElementById('toolSelect').value = config.tool;
         document.getElementById('invertInput').checked = config.invert;
         document.getElementById('minBlobInput').value = config.minBlob;
-        document.getElementById('maxBlobCountInput').value = config.maxBlobCount;
+        document.getElementById('minCountInput').value = config.minCount || 1;
+        document.getElementById('maxCountInput').value = config.maxCount || 1;
     }
-
     function switchTool() {
         config.tool = document.getElementById('toolSelect').value;
         document.getElementById('presenceSettings').classList.toggle('visible', config.tool === 'presence');
@@ -158,55 +130,35 @@
         };
     });
 
-    // ROI Drag & Resize
     const getPos = (e) => {
         const rect = c.getBoundingClientRect();
         const cx = e.touches ? e.touches[0].clientX : e.clientX;
         const cy = e.touches ? e.touches[0].clientY : e.clientY;
         return { x: (cx - rect.left) * (c.width / rect.width), y: (cy - rect.top) * (c.height / rect.height) };
     };
-
     c.onmousedown = (e) => {
         const p = getPos(e);
-        const handleSize = 40;
-        if (p.x > config.roi.x + config.roi.w - handleSize && p.x < config.roi.x + config.roi.w + 10 &&
-            p.y > config.roi.y + config.roi.h - handleSize && p.y < config.roi.y + config.roi.h + 10) {
-            isResizing = true;
-        } else if (p.x > config.roi.x && p.x < config.roi.x + config.roi.w && p.y > config.roi.y && p.y < config.roi.y + config.roi.h) {
-            isDragging = true; offset = { x: p.x - config.roi.x, y: p.y - config.roi.y };
-        }
+        if (p.x > config.roi.x + config.roi.w - 40 && p.x < config.roi.x + config.roi.w + 10 && p.y > config.roi.y + config.roi.h - 40 && p.y < config.roi.y + config.roi.h + 10) isResizing = true;
+        else if (p.x > config.roi.x && p.x < config.roi.x + config.roi.w && p.y > config.roi.y && p.y < config.roi.y + config.roi.h) { isDragging = true; offset = { x: p.x - config.roi.x, y: p.y - config.roi.y }; }
     };
     window.onmousemove = (e) => {
         const p = getPos(e);
-        if (isResizing) {
-            config.roi.w = Math.max(30, p.x - config.roi.x);
-            config.roi.h = Math.max(30, p.y - config.roi.y);
-        } else if (isDragging) {
-            config.roi.x = p.x - offset.x; config.roi.y = p.y - offset.y;
-        }
+        if (isResizing) { config.roi.w = Math.max(30, p.x - config.roi.x); config.roi.h = Math.max(30, p.y - config.roi.y); }
+        else if (isDragging) { config.roi.x = p.x - offset.x; config.roi.y = p.y - offset.y; }
     };
     window.onmouseup = () => { isDragging = false; isResizing = false; };
-    c.ontouchstart = (e) => { c.onmousedown(e.touches[0]); e.preventDefault(); };
-    window.ontouchmove = (e) => { window.onmousemove(e.touches[0]); };
 
     function saveConfig() {
-        config.thr = document.getElementById('thrInput').value;
-        config.morph = document.getElementById('morphInput').value;
-        config.limit = document.getElementById('limitInput').value;
-        config.invert = document.getElementById('invertInput').checked;
+        config.thr = document.getElementById('thrInput').value; config.morph = document.getElementById('morphInput').value;
+        config.limit = document.getElementById('limitInput').value; config.invert = document.getElementById('invertInput').checked;
         config.minBlob = document.getElementById('minBlobInput').value;
-        config.maxBlobCount = document.getElementById('maxBlobCountInput').value;
+        config.minCount = document.getElementById('minCountInput').value;
+        config.maxCount = document.getElementById('maxCountInput').value;
+        config.tool = document.getElementById('toolSelect').value;
         localStorage.setItem('aoi_config', JSON.stringify(config));
     }
-
     function resetStats() { stats = { total: 0, pass: 0, fail: 0 }; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
-
-    function inspect() {
-        if (!opencvReady) return;
-        stats.total++;
-        if (isOkNow) stats.pass++; else stats.fail++;
-        localStorage.setItem('aoi_stats', JSON.stringify(stats));
-    }
+    function inspect() { if (!opencvReady) return; stats.total++; if (isOkNow) stats.pass++; else stats.fail++; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
 
     function render() {
         if (opencvReady && v.readyState >= 2) {
@@ -214,10 +166,10 @@
                 hCtx.drawImage(v, 0, 0, hCanvas.width, hCanvas.height);
                 if (!src) {
                     src = new cv.Mat(v.videoHeight, v.videoWidth, cv.CV_8UC4);
-                    grey = new cv.Mat(); thrMat = new cv.Mat(); finalMat = new cv.Mat();
+                    grey = new cv.Mat(); thrMat = new cv.Mat();
                 }
                 src.data.set(hCtx.getImageData(0, 0, v.videoWidth, v.videoHeight).data);
-
+                
                 let rx = Math.max(0, Math.min(Math.floor(config.roi.x), src.cols - 10));
                 let ry = Math.max(0, Math.min(Math.floor(config.roi.y), src.rows - 10));
                 let rw = Math.min(Math.floor(config.roi.w), src.cols - rx);
@@ -226,11 +178,9 @@
                 let roiMat = src.roi(new cv.Rect(rx, ry, rw, rh));
                 cv.cvtColor(roiMat, grey, cv.COLOR_RGBA2GRAY);
                 
-                // Invert
                 let thrType = document.getElementById('invertInput').checked ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
                 cv.threshold(grey, thrMat, parseInt(document.getElementById('thrInput').value), 255, thrType);
                 
-                // Morph (Erode/Dilate ühes slaideris)
                 let mVal = parseInt(document.getElementById('morphInput').value);
                 if (mVal !== 0) {
                     let k = cv.Mat.ones(Math.abs(mVal), Math.abs(mVal), cv.CV_8U);
@@ -239,58 +189,82 @@
                 }
 
                 pCanvas.width = rw; pCanvas.height = rh;
-                cv.imshow(pCanvas, thrMat);
 
                 if (config.tool === 'presence') {
                     currentPixels = cv.countNonZero(thrMat);
                     isOkNow = currentPixels >= parseInt(document.getElementById('limitInput').value);
                     blobCount = 0;
+                    cv.imshow(pCanvas, thrMat);
                 } else {
+                    let tempMat = thrMat.clone();
                     let contours = new cv.MatVector();
                     let hierarchy = new cv.Mat();
-                    cv.findContours(thrMat, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                    cv.findContours(tempMat, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+                    
+                    let displayMat = new cv.Mat();
+                    cv.cvtColor(thrMat, displayMat, cv.COLOR_GRAY2RGBA);
                     
                     blobCount = 0;
                     let minA = parseInt(document.getElementById('minBlobInput').value);
+                    let color = new cv.Scalar(0, 255, 255, 255); // Tsüaan piirjoonte jaoks
+                    
+                    let validContours = new cv.MatVector();
                     for (let i = 0; i < contours.size(); ++i) {
-                        if (cv.contourArea(contours.get(i)) >= minA) blobCount++;
+                        let cnt = contours.get(i);
+                        if (cv.contourArea(cnt) >= minA) {
+                            blobCount++;
+                            validContours.push_back(cnt);
+                        }
                     }
-                    isOkNow = blobCount >= parseInt(document.getElementById('maxBlobCountInput').value);
-                    contours.delete(); hierarchy.delete();
+                    
+                    // JOONISTA BLOOBI KUJULISED OBJEKTID
+                    cv.drawContours(displayMat, validContours, -1, color, 2);
+                    
+                    let minTarget = parseInt(document.getElementById('minCountInput').value);
+                    let maxTarget = parseInt(document.getElementById('maxCountInput').value);
+                    isOkNow = (blobCount >= minTarget && blobCount <= maxTarget);
+                    
+                    cv.imshow(pCanvas, displayMat);
+                    
+                    tempMat.delete(); contours.delete(); hierarchy.delete(); displayMat.delete(); validContours.delete();
                 }
-
                 roiMat.delete();
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error("AOI Error:", err); }
         }
 
-        // UI & Drawing
-        ctx.clearRect(0, 0, c.width, c.height);
-        
-        // Dünaamiline limiit
-        let maxPx = config.roi.w * config.roi.h;
-        document.getElementById('limitInput').max = maxPx;
-        
+        // UI UUENDAMINE
+        document.getElementById('limitInput').max = config.roi.w * config.roi.h;
         document.getElementById('thrVal').innerText = document.getElementById('thrInput').value;
         document.getElementById('morphVal').innerText = document.getElementById('morphInput').value;
         document.getElementById('limitVal').innerText = document.getElementById('limitInput').value;
         document.getElementById('minBlobVal').innerText = document.getElementById('minBlobInput').value;
-        document.getElementById('maxBlobCountVal').innerText = document.getElementById('maxBlobCountInput').value;
-        document.getElementById('pxLive').innerText = `PX: ${currentPixels} | BLOBS: ${blobCount}`;
+        document.getElementById('minCountVal').innerText = document.getElementById('minCountInput').value;
+        document.getElementById('maxCountVal').innerText = document.getElementById('maxCountInput').value;
         
+        const pxLive = document.getElementById('pxLive');
+        if (config.tool === 'blob') {
+            const minC = document.getElementById('minCountInput').value;
+            const maxC = document.getElementById('maxCountInput').value;
+            pxLive.innerText = `PX: ${currentPixels} | BLOBS: ${blobCount} / [${minC}-${maxC}]`;
+            pxLive.className = isOkNow ? "" : "limit-error";
+        } else {
+            pxLive.innerText = `PX: ${currentPixels} | BLOBS: 0`;
+            pxLive.className = isOkNow ? "" : "limit-error";
+        }
+
         document.getElementById('countTotal').innerText = stats.total;
         document.getElementById('countPass').innerText = stats.pass;
         document.getElementById('countFail').innerText = stats.fail;
         document.getElementById('valFPY').innerText = (stats.total > 0 ? (stats.pass/stats.total*100).toFixed(1) : 0) + "%";
         
         const st = document.getElementById('mainStatus');
-        st.innerText = isOkNow ? "PASS" : "FAIL";
-        st.className = `status-hero ${isOkNow ? 'pass' : 'fail'}`;
+        st.innerText = isOkNow ? "PASS" : "FAIL"; st.className = `status-hero ${isOkNow ? 'pass' : 'fail'}`;
 
+        ctx.clearRect(0, 0, c.width, c.height);
         ctx.strokeStyle = isOkNow ? "#10b981" : "#f43f5e";
         ctx.lineWidth = 3;
         ctx.strokeRect(config.roi.x, config.roi.y, config.roi.w, config.roi.h);
-        ctx.fillStyle = "white";
-        ctx.fillRect(config.roi.x + config.roi.w - 8, config.roi.y + config.roi.h - 8, 8, 8);
+        ctx.fillStyle = "white"; ctx.fillRect(config.roi.x + config.roi.w - 8, config.roi.y + config.roi.h - 8, 8, 8);
 
         requestAnimationFrame(render);
     }
