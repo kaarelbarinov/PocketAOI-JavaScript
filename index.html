@@ -12,80 +12,104 @@
         #viewport { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #000; }
         #container { position: relative; line-height: 0; }
         video { max-width: 100%; max-height: 80vh; display: block; }
-        canvas#mainCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
-        .card { background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 5px; }
-        h4 { margin: 0 0 10px 0; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
-        .status-hero { padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; font-size: 20px; border: 2px solid #334155; }
+        canvas#mainCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: crosshair; }
+        details { background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; overflow: hidden; }
+        summary { padding: 12px; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; cursor: pointer; border-bottom: 1px solid transparent; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+        details[open] summary { border-bottom-color: #334155; margin-bottom: 10px; color: var(--accent); }
+        .card-content { padding: 0 12px 12px 12px; }
+        .status-hero { padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; font-size: 20px; border: 2px solid #334155; margin-bottom: 10px; }
         .pass { color: var(--ok); border-color: var(--ok); background: rgba(16, 185, 129, 0.1); }
         .fail { color: var(--viga); border-color: var(--viga); background: rgba(244, 63, 94, 0.1); }
         .preview-container { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: #000; border: 1px solid #475569; overflow: hidden; }
         #previewCanvas { max-width: 100%; max-height: 100%; }
-        select, input[type="range"] { width: 100%; background: #0f172a; color: white; border: 1px solid #475569; padding: 5px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; }
+        select, input[type="range"] { width: 100%; background: #0f172a; color: white; border: 1px solid #475569; padding: 6px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; font-size: 12px; }
         label { display: block; font-size: 11px; margin-bottom: 3px; color: #cbd5e1; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .stat-box { text-align: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
-        .inspect-btn { background: var(--accent); color: #000; padding: 15px; font-weight: 900; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-bottom: 5px; width:100%; }
+        .inspect-btn { background: var(--accent); color: #000; padding: 15px; font-weight: 900; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-bottom: 10px; width: 100%; }
         .tool-settings { display: none; }
         .visible { display: block; }
-        .limit-error { color: var(--viga) !important; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-    <h3 style="margin:0; color:var(--accent); font-size: 18px;">POCKET AOI</h3>
+    <h3 style="margin:0; color:var(--accent); font-size: 18px; margin-bottom: 10px;">POCKET AOI</h3>
     <div id="mainStatus" class="status-hero">OOTEL</div>
     <button class="inspect-btn" onclick="inspect()">INSPEKTEERI</button>
 
-    <div class="card">
-        <h4>Pildi Filtrid</h4>
-        <label><input type="checkbox" id="invertInput"> Inverteeri</label>
-        <label>Threshold: <b id="thrVal">127</b></label>
-        <input type="range" id="thrInput" min="0" max="255" value="127">
-        <label>Müra (Erode/Dilate): <b id="morphVal">0</b></label>
-        <input type="range" id="morphInput" min="-10" max="10" value="0">
-    </div>
+    <details open>
+        <summary>ROI Seaded</summary>
+        <div class="card-content">
+            <label>Piirkonna kuju</label>
+            <select id="roiShapeSelect" onchange="config.roiShape = this.value">
+                <option value="rect">Nelinurk (Rect)</option>
+                <option value="circle">Ring (Circle)</option>
+            </select>
+            <label style="margin-top:10px;"><input type="checkbox" id="invertInput"> Inverteeri loogika</label>
+        </div>
+    </details>
 
-    <div class="card">
-        <h4>Inspektsiooni Tööriist</h4>
-        <select id="toolSelect" onchange="switchTool()">
-            <option value="presence">Presence Check (Pixel Count)</option>
-            <option value="blob" selected>Blob Detector (Object Count)</option>
-        </select>
-        <div id="presenceSettings" class="tool-settings">
-            <label>Min. Pikslite arv: <b id="limitVal">5000</b></label>
-            <input type="range" id="limitInput" min="0" max="10000" value="5000">
+    <details>
+        <summary>Pildi Filtrid</summary>
+        <div class="card-content">
+            <label>Threshold: <b id="thrVal">127</b></label>
+            <input type="range" id="thrInput" min="0" max="255" value="127">
+            <label>Müra eemaldus: <b id="morphVal">0</b></label>
+            <input type="range" id="morphInput" min="-10" max="10" value="0">
         </div>
-        <div id="blobSettings" class="tool-settings visible">
-            <label>Min. Objekti pindala: <b id="minBlobVal">100</b></label>
-            <input type="range" id="minBlobInput" min="5" max="5000" value="100">
-            <label>Min objekti kogus: <b id="minCountVal">1</b></label>
-            <input type="range" id="minCountInput" min="0" max="20" value="1">
-            <label>Max objekti kogus: <b id="maxCountVal">1</b></label>
-            <input type="range" id="maxCountInput" min="1" max="50" value="1">
+    </details>
+
+    <details open>
+        <summary>Inspektsiooni Tööriist</summary>
+        <div class="card-content">
+            <label>Vali tööriist</label>
+            <select id="toolSelect" onchange="switchTool()">
+                <option value="presence">Presence (Pikslite arv)</option>
+                <option value="blob">Blob (Objektide loendus)</option>
+            </select>
+
+            <div id="presenceSettings" class="tool-settings">
+                <label>Min. Pikslite arv: <b id="limitVal">5000</b></label>
+                <input type="range" id="limitInput" min="0" max="10000" value="5000">
+            </div>
+
+            <div id="blobSettings" class="tool-settings">
+                <label>Min. Objekti pindala: <b id="minBlobVal">100</b></label>
+                <input type="range" id="minBlobInput" min="5" max="5000" value="100">
+                <label>Min kogus: <b id="minCountVal">1</b></label>
+                <input type="range" id="minCountInput" min="0" max="20" value="1">
+                <label>Max kogus: <b id="maxCountVal">1</b></label>
+                <input type="range" id="maxCountInput" min="1" max="50" value="1">
+            </div>
+            <button onclick="saveConfig()" style="background:#475569; color:white; border:none; padding:8px; width:100%; border-radius:4px; font-size:10px; cursor:pointer; margin-top:5px;">SALVESTA SEADED</button>
         </div>
-        <button onclick="saveConfig()" style="background:#475569; color:white; border:none; padding:8px; width:100%; border-radius:4px; font-size:10px; cursor:pointer; margin-top:5px;">SALVESTA SEADED</button>
-    </div>
+    </details>
 </div>
 
 <div id="viewport"><div id="container"><video id="v" autoplay playsinline muted></video><canvas id="mainCanvas"></canvas></div></div>
 
 <div class="sidebar sidebar-right">
-    <div class="card">
-        <h4>Live Filter Preview</h4>
-        <div class="preview-container"><canvas id="previewCanvas"></canvas></div>
-        <div id="pxLive" style="text-align:center; font-family:monospace; color:var(--accent); margin-top:8px; font-size:12px;">PX: 0 | BLOBS: 0 / 0</div>
-    </div>
-    <div class="card">
-        <h4>Statistika & FPY</h4>
-        <div class="stat-grid">
-            <div class="stat-box"><span id="countTotal">0</span><br><small>KOKKU</small></div>
-            <div class="stat-box"><span id="valFPY">0%</span><br><small>FPY</small></div>
-            <div class="stat-box" style="color:var(--ok)"><span id="countPass">0</span><br><small>PASS</small></div>
-            <div class="stat-box" style="color:var(--viga)"><span id="countFail">0</span><br><small>FAIL</small></div>
+    <details open>
+        <summary>Filter Preview</summary>
+        <div class="card-content">
+            <div class="preview-container"><canvas id="previewCanvas"></canvas></div>
+            <div id="pxLive" style="text-align:center; font-family:monospace; color:var(--accent); margin-top:8px; font-size:12px;">OOTEL...</div>
         </div>
-        <button onclick="resetStats()" style="margin-top:10px; font-size:10px; width:100%; cursor:pointer; background:transparent; border:1px solid #475569; color:white; padding:5px;">NULLI STATISTIKA</button>
-    </div>
+    </details>
+
+    <details open>
+        <summary>Statistika & FPY</summary>
+        <div class="card-content">
+            <div class="stat-grid">
+                <div class="stat-box"><span id="countTotal">0</span><br><small>KOKKU</small></div>
+                <div class="stat-box"><span id="valFPY">0%</span><br><small>FPY</small></div>
+                <div class="stat-box" style="color:var(--ok)"><span id="countPass">0</span><br><small>PASS</small></div>
+                <div class="stat-box" style="color:var(--viga)"><span id="countFail">0</span><br><small>FAIL</small></div>
+            </div>
+            <button onclick="resetStats()" style="margin-top:10px; font-size:10px; width:100%; cursor:pointer; background:transparent; border:1px solid #475569; color:white; padding:5px; border-radius:4px;">NULLI STATISTIKA</button>
+        </div>
+    </details>
 </div>
 
 <script async src="https://docs.opencv.org/4.5.4/opencv.js" onload="cvLoaded()"></script>
@@ -95,27 +119,32 @@
     const pCanvas = document.getElementById('previewCanvas'), pCtx = pCanvas.getContext('2d');
     const hCanvas = document.createElement('canvas'), hCtx = hCanvas.getContext('2d');
 
-    let config = JSON.parse(localStorage.getItem('aoi_config')) || { roi: { x: 50, y: 50, w: 150, h: 150 }, thr: 127, morph: 0, limit: 5000, tool: 'blob', invert: false, minBlob: 100, minCount: 1, maxCount: 1 };
+    let config = JSON.parse(localStorage.getItem('aoi_config')) || { 
+        roi: { x: 50, y: 50, w: 150, h: 150 }, 
+        roiShape: 'rect', thr: 127, morph: 0, invert: false, tool: 'blob', limit: 5000, minBlob: 100, minCount: 1, maxCount: 1 
+    };
     let stats = JSON.parse(localStorage.getItem('aoi_stats')) || { total: 0, pass: 0, fail: 0 };
-    let opencvReady = false, isDragging = false, isResizing = false, isOkNow = false;
-    let offset = { x: 0, y: 0 }, blobCount = 0, currentPixels = 0;
-    let src, grey, thrMat;
+    let opencvReady = false, isDragging = false, isResizing = false, isOkNow = false, blobCount = 0, currentPixels = 0;
+    let offset = { x: 0, y: 0 }, src, grey, thrMat;
 
-    function cvLoaded() { opencvReady = true; loadUIValues(); switchTool(); }
-    function loadUIValues() {
-        document.getElementById('thrInput').value = config.thr;
-        document.getElementById('morphInput').value = config.morph;
-        document.getElementById('limitInput').value = config.limit;
-        document.getElementById('toolSelect').value = config.tool;
-        document.getElementById('invertInput').checked = config.invert;
-        document.getElementById('minBlobInput').value = config.minBlob;
-        document.getElementById('minCountInput').value = config.minCount || 1;
-        document.getElementById('maxCountInput').value = config.maxCount || 1;
-    }
+    function cvLoaded() { opencvReady = true; loadUIValues(); switchTool(); render(); }
+    
     function switchTool() {
         config.tool = document.getElementById('toolSelect').value;
         document.getElementById('presenceSettings').classList.toggle('visible', config.tool === 'presence');
         document.getElementById('blobSettings').classList.toggle('visible', config.tool === 'blob');
+    }
+
+    function loadUIValues() {
+        document.getElementById('thrInput').value = config.thr;
+        document.getElementById('morphInput').value = config.morph;
+        document.getElementById('invertInput').checked = config.invert;
+        document.getElementById('toolSelect').value = config.tool || 'blob';
+        document.getElementById('limitInput').value = config.limit;
+        document.getElementById('minBlobInput').value = config.minBlob;
+        document.getElementById('minCountInput').value = config.minCount;
+        document.getElementById('maxCountInput').value = config.maxCount;
+        document.getElementById('roiShapeSelect').value = config.roiShape;
     }
 
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(stream => {
@@ -125,11 +154,11 @@
             setTimeout(() => {
                 c.width = v.videoWidth; c.height = v.videoHeight;
                 hCanvas.width = v.videoWidth; hCanvas.height = v.videoHeight;
-                render();
             }, 1000);
         };
     });
 
+    // ROI Drag/Resize logic
     const getPos = (e) => {
         const rect = c.getBoundingClientRect();
         const cx = e.touches ? e.touches[0].clientX : e.clientX;
@@ -149,38 +178,59 @@
     window.onmouseup = () => { isDragging = false; isResizing = false; };
 
     function saveConfig() {
-        config.thr = document.getElementById('thrInput').value; config.morph = document.getElementById('morphInput').value;
-        config.limit = document.getElementById('limitInput').value; config.invert = document.getElementById('invertInput').checked;
+        config.thr = document.getElementById('thrInput').value;
+        config.morph = document.getElementById('morphInput').value;
+        config.invert = document.getElementById('invertInput').checked;
+        config.tool = document.getElementById('toolSelect').value;
+        config.limit = document.getElementById('limitInput').value;
         config.minBlob = document.getElementById('minBlobInput').value;
         config.minCount = document.getElementById('minCountInput').value;
         config.maxCount = document.getElementById('maxCountInput').value;
-        config.tool = document.getElementById('toolSelect').value;
         localStorage.setItem('aoi_config', JSON.stringify(config));
     }
+
     function resetStats() { stats = { total: 0, pass: 0, fail: 0 }; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
-    function inspect() { if (!opencvReady) return; stats.total++; if (isOkNow) stats.pass++; else stats.fail++; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
+    function inspect() { stats.total++; if (isOkNow) stats.pass++; else stats.fail++; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
 
     function render() {
         if (opencvReady && v.readyState >= 2) {
             try {
                 hCtx.drawImage(v, 0, 0, hCanvas.width, hCanvas.height);
-                if (!src) {
-                    src = new cv.Mat(v.videoHeight, v.videoWidth, cv.CV_8UC4);
-                    grey = new cv.Mat(); thrMat = new cv.Mat();
-                }
+                if (!src) { src = new cv.Mat(v.videoHeight, v.videoWidth, cv.CV_8UC4); grey = new cv.Mat(); thrMat = new cv.Mat(); }
                 src.data.set(hCtx.getImageData(0, 0, v.videoWidth, v.videoHeight).data);
                 
                 let rx = Math.max(0, Math.min(Math.floor(config.roi.x), src.cols - 10));
                 let ry = Math.max(0, Math.min(Math.floor(config.roi.y), src.rows - 10));
-                let rw = Math.min(Math.floor(config.roi.w), src.cols - rx);
-                let rh = Math.min(Math.floor(config.roi.h), src.rows - ry);
+                let rw = Math.max(10, Math.min(Math.floor(config.roi.w), src.cols - rx));
+                let rh = Math.max(10, Math.min(Math.floor(config.roi.h), src.rows - ry));
                 
                 let roiMat = src.roi(new cv.Rect(rx, ry, rw, rh));
                 cv.cvtColor(roiMat, grey, cv.COLOR_RGBA2GRAY);
                 
+                // 1. MASK (Ringikujuline piirang)
+                let circleMask = null;
+                if (config.roiShape === 'circle') {
+                    circleMask = cv.Mat.zeros(rh, rw, cv.CV_8UC1);
+                    cv.circle(circleMask, new cv.Point(rw/2, rh/2), Math.min(rw, rh)/2, new cv.Scalar(255), -1);
+                    cv.bitwise_and(grey, circleMask, grey);
+                }
+
+                // 2. THRESHOLD JA INVERT
                 let thrType = document.getElementById('invertInput').checked ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
                 cv.threshold(grey, thrMat, parseInt(document.getElementById('thrInput').value), 255, thrType);
                 
+                // 3. PUHASTA SERVAD (Peale inverteerimist oluline!)
+                if (config.roiShape === 'circle') {
+                    cv.bitwise_and(thrMat, circleMask, thrMat);
+                    circleMask.delete();
+                } else {
+                    // Nelinurga puhul tõmbame servadesse 1px musta raami, et findContours ei loeks serva blobi
+                    let border = new cv.Scalar(0);
+                    cv.copyMakeBorder(thrMat, thrMat, 1, 1, 1, 1, cv.BORDER_CONSTANT, border);
+                    cv.resize(thrMat, thrMat, new cv.Size(rw, rh));
+                }
+
+                // 4. MÜRA
                 let mVal = parseInt(document.getElementById('morphInput').value);
                 if (mVal !== 0) {
                     let k = cv.Mat.ones(Math.abs(mVal), Math.abs(mVal), cv.CV_8U);
@@ -189,12 +239,12 @@
                 }
 
                 pCanvas.width = rw; pCanvas.height = rh;
-
+                
                 if (config.tool === 'presence') {
                     currentPixels = cv.countNonZero(thrMat);
                     isOkNow = currentPixels >= parseInt(document.getElementById('limitInput').value);
-                    blobCount = 0;
                     cv.imshow(pCanvas, thrMat);
+                    document.getElementById('pxLive').innerText = `PX: ${currentPixels} / MIN: ${document.getElementById('limitInput').value}`;
                 } else {
                     let tempMat = thrMat.clone();
                     let contours = new cv.MatVector();
@@ -206,65 +256,54 @@
                     
                     blobCount = 0;
                     let minA = parseInt(document.getElementById('minBlobInput').value);
-                    let color = new cv.Scalar(0, 255, 255, 255); // Tsüaan piirjoonte jaoks
-                    
                     let validContours = new cv.MatVector();
                     for (let i = 0; i < contours.size(); ++i) {
                         let cnt = contours.get(i);
-                        if (cv.contourArea(cnt) >= minA) {
-                            blobCount++;
-                            validContours.push_back(cnt);
+                        let area = cv.contourArea(cnt);
+                        // Filtreerime välja liiga väikesed ja ka liiga hiiglaslikud (serva-viga)
+                        if (area >= minA && area < (rw * rh * 0.95)) { 
+                            blobCount++; 
+                            validContours.push_back(cnt); 
                         }
                     }
-                    
-                    // JOONISTA BLOOBI KUJULISED OBJEKTID
-                    cv.drawContours(displayMat, validContours, -1, color, 2);
-                    
-                    let minTarget = parseInt(document.getElementById('minCountInput').value);
-                    let maxTarget = parseInt(document.getElementById('maxCountInput').value);
-                    isOkNow = (blobCount >= minTarget && blobCount <= maxTarget);
-                    
+                    cv.drawContours(displayMat, validContours, -1, new cv.Scalar(0, 255, 255, 255), 2);
+                    isOkNow = (blobCount >= config.minCount && blobCount <= config.maxCount);
                     cv.imshow(pCanvas, displayMat);
+                    document.getElementById('pxLive').innerText = `BLOBS: ${blobCount} / [${config.minCount}-${config.maxCount}]`;
                     
                     tempMat.delete(); contours.delete(); hierarchy.delete(); displayMat.delete(); validContours.delete();
                 }
                 roiMat.delete();
-            } catch (err) { console.error("AOI Error:", err); }
+            } catch (err) { console.log(err); }
         }
 
-        // UI UUENDAMINE
-        document.getElementById('limitInput').max = config.roi.w * config.roi.h;
+        // DRAW MAIN CANVAS
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.strokeStyle = isOkNow ? "#10b981" : "#f43f5e";
+        ctx.lineWidth = 3;
+        if (config.roiShape === 'rect') {
+            ctx.strokeRect(config.roi.x, config.roi.y, config.roi.w, config.roi.h);
+        } else {
+            ctx.beginPath();
+            ctx.arc(config.roi.x + config.roi.w/2, config.roi.y + config.roi.h/2, Math.min(config.roi.w, config.roi.h)/2, 0, Math.PI*2);
+            ctx.stroke();
+        }
+        ctx.fillStyle = "white"; ctx.fillRect(config.roi.x + config.roi.w - 8, config.roi.y + config.roi.h - 8, 8, 8);
+
+        // Update UI
         document.getElementById('thrVal').innerText = document.getElementById('thrInput').value;
         document.getElementById('morphVal').innerText = document.getElementById('morphInput').value;
         document.getElementById('limitVal').innerText = document.getElementById('limitInput').value;
         document.getElementById('minBlobVal').innerText = document.getElementById('minBlobInput').value;
-        document.getElementById('minCountVal').innerText = document.getElementById('minCountInput').value;
-        document.getElementById('maxCountVal').innerText = document.getElementById('maxCountInput').value;
-        
-        const pxLive = document.getElementById('pxLive');
-        if (config.tool === 'blob') {
-            const minC = document.getElementById('minCountInput').value;
-            const maxC = document.getElementById('maxCountInput').value;
-            pxLive.innerText = `PX: ${currentPixels} | BLOBS: ${blobCount} / [${minC}-${maxC}]`;
-            pxLive.className = isOkNow ? "" : "limit-error";
-        } else {
-            pxLive.innerText = `PX: ${currentPixels} | BLOBS: 0`;
-            pxLive.className = isOkNow ? "" : "limit-error";
-        }
-
+        document.getElementById('minCountVal').innerText = config.minCount = document.getElementById('minCountInput').value;
+        document.getElementById('maxCountVal').innerText = config.maxCount = document.getElementById('maxCountInput').value;
+        document.getElementById('pxLive').style.color = isOkNow ? "#00f2ff" : "#f43f5e";
         document.getElementById('countTotal').innerText = stats.total;
         document.getElementById('countPass').innerText = stats.pass;
         document.getElementById('countFail').innerText = stats.fail;
         document.getElementById('valFPY').innerText = (stats.total > 0 ? (stats.pass/stats.total*100).toFixed(1) : 0) + "%";
-        
         const st = document.getElementById('mainStatus');
         st.innerText = isOkNow ? "PASS" : "FAIL"; st.className = `status-hero ${isOkNow ? 'pass' : 'fail'}`;
-
-        ctx.clearRect(0, 0, c.width, c.height);
-        ctx.strokeStyle = isOkNow ? "#10b981" : "#f43f5e";
-        ctx.lineWidth = 3;
-        ctx.strokeRect(config.roi.x, config.roi.y, config.roi.w, config.roi.h);
-        ctx.fillStyle = "white"; ctx.fillRect(config.roi.x + config.roi.w - 8, config.roi.y + config.roi.h - 8, 8, 8);
 
         requestAnimationFrame(render);
     }
