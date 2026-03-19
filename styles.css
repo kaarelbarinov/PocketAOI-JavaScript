@@ -388,13 +388,35 @@ body {
     font-size: 1.2rem;
 }
 
+/* --- MOBIILI PARANDUS --- */
 @media (max-width: 1200px) {
     .main-container {
-        grid-template-columns: 1fr;
-        height: auto;
+        /* Muudame gridi üheks tulbaks ja laseme kõrgusel vabalt kasvada */
+        grid-template-columns: 1fr; 
+        height: auto; 
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding-bottom: 50px; /* Lisa ruumi alla, et viimane nupp ei jääks serva alla */
     }
 
     .sidebar {
-        display: none;
+        /* Toome sidebarid nähtavale */
+        display: block; 
+        width: 100%;
+        height: auto;
+        order: 2; /* Filtrid liiguvad video alla */
+    }
+
+    .viewport {
+        /* Video on mobiilis alati esimene/kõige ülal */
+        order: 1;
+        height: 60vh; /* Piirame video kõrgust, et nupud oleksid kohe näha */
+        min-height: 300px;
+    }
+
+    .app-header h1 {
+        font-size: 1.5rem; /* Teeme pealkirja väiksemaks, et mahuks ära */
     }
 }
