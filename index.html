@@ -1,278 +1,186 @@
 <!DOCTYPE html>
-<html lang="et">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pocket AOI Pro - Logic Fixed</title>
-    <style>
-        :root { --bg: #0f172a; --panel: #1e293b; --accent: #00f2ff; --ok: #10b981; --viga: #f43f5e; --text: #f8fafc; }
-        body { margin: 0; font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 320px; min-width: 320px; background: var(--panel); padding: 20px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #334155; overflow-y: auto; box-sizing: border-box; }
-        .sidebar-right { border-left: 1px solid #334155; border-right: none; }
-        #viewport { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; background: #000; overflow: hidden; }
-        #container { position: relative; line-height: 0; }
-        video { max-width: 100%; max-height: 85vh; display: block; }
-        canvas#mainCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; cursor: crosshair; }
-        details { background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; flex-shrink: 0; }
-        summary { padding: 12px; font-size: 10px; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; user-select: none; }
-        details[open] summary { border-bottom: 1px solid #334155; color: var(--accent); margin-bottom: 10px; }
-        .card-content { padding: 0 12px 12px 12px; }
-        .status-hero { padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; font-size: 20px; border: 2px solid #334155; margin-bottom: 10px; flex-shrink: 0; }
-        .pass { color: var(--ok); border-color: var(--ok); background: rgba(16, 185, 129, 0.1); }
-        .fail { color: var(--viga); border-color: var(--viga); background: rgba(244, 63, 94, 0.1); }
-        .preview-container { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; background: #000; border: 1px solid #475569; overflow: hidden; }
-        #previewCanvas { max-width: 100%; max-height: 100%; }
-        select, input[type="range"] { width: 100%; background: #0f172a; color: white; border: 1px solid #475569; padding: 6px; border-radius: 4px; margin-bottom: 8px; cursor: pointer; font-size: 12px; box-sizing: border-box; }
-        label { display: block; font-size: 11px; margin-bottom: 3px; color: #cbd5e1; }
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .stat-box { text-align: center; padding: 8px; background: rgba(255,255,255,0.03); border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
-        .inspect-btn { background: var(--accent); color: #000; padding: 15px; font-weight: 900; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-bottom: 10px; width: 100%; flex-shrink: 0; }
-        .tool-settings { display: none; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POCKET AOI MVP</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- HEADER -->
+    <header class="app-header">
+        <h1>POCKET AOI</h1>
+    </header>
 
-<div class="sidebar">
-    <h3 style="margin:0; color:var(--accent); font-size: 18px; margin-bottom: 10px;">POCKET AOI</h3>
-    <div id="mainStatus" class="status-hero">OOTEL</div>
-    <button class="inspect-btn" onclick="inspect()">INSPEKTEERI</button>
+    <!-- MAIN LAYOUT -->
+    <div class="main-container">
+        <!-- LEFT SIDEBAR -->
+        <aside class="sidebar left-sidebar">
+            
+            <!-- 1. TOOLS SECTION -->
+            <div class="collapsible-section collapsed">
+                <h2 class="section-header" onclick="toggleSection(this)">
+                    <span class="toggle-icon">▼</span> <span class="section-number">1.</span> TOOLS
+                </h2>
+                <div class="section-content">
+                    <div class="control-group">
+                        <label>Select Tool:</label>
+                        <select id="toolSelector">
+                            <option value="presence">Presence Counter</option>
+                            <option value="blob">Blob Detection</option>
+                        </select>
+                    </div>
 
-    <details open>
-        <summary>ROI Seaded</summary>
-        <div class="card-content">
-            <label>Piirkonna kuju</label>
-            <select id="roiShapeSelect" onchange="config.roiShape = this.value; saveConfig();">
-                <option value="rect">Ruut</option>
-                <option value="circle">Ring</option>
-            </select>
-            <label style="margin-top:10px;"><input type="checkbox" id="invertInput" onchange="config.invert = this.checked; saveConfig();"> Inverteeri</label>
-        </div>
-    </details>
+                    <!-- PRESENCE TOOL LIMITS -->
+                    <div id="presenceLimits" class="tool-limits">
+                        <div class="control-group">
+                            <label>Pixel Threshold:</label>
+                            <input type="range" id="presenceLimit" min="1" max="10000" value="100" class="slider">
+                            <span id="presenceLimitDisplay" class="slider-value">100 px</span>
+                        </div>
+                    </div>
 
-    <details>
-        <summary>Pildi Filtrid</summary>
-        <div class="card-content">
-            <label>Threshold: <b id="thrVal">127</b></label>
-            <input type="range" id="thrInput" min="0" max="255" value="127" oninput="config.thr = this.value; saveConfig();">
-            <label>Müra: <b id="morphVal">0</b></label>
-            <input type="range" id="morphInput" min="-10" max="10" value="0" oninput="config.morph = this.value; saveConfig();">
-        </div>
-    </details>
+                    <!-- BLOB TOOL LIMITS -->
+                    <div id="blobLimits" class="tool-limits" style="display: none;">
+                        <div class="control-group">
+                            <label>Min Blob Size:</label>
+                            <input type="range" id="blobMinSize" min="1" max="500" value="80" class="slider">
+                            <span id="blobMinSizeDisplay" class="slider-value">80 px</span>
+                        </div>
+                        <div class="control-group">
+                            <label>Min Blob Count:</label>
+                            <input type="range" id="blobMinCount" min="1" max="100" value="1" class="slider">
+                            <span id="blobMinCountDisplay" class="slider-value">1 blob</span>
+                        </div>
+                        <div class="control-group">
+                            <label>Max Blob Count:</label>
+                            <input type="range" id="blobMaxCount" min="1" max="100" value="10" class="slider">
+                            <span id="blobMaxCountDisplay" class="slider-value">10 blobs</span>
+                        </div>
+                    </div>
 
-    <details open>
-        <summary>Inspektsiooni Tööriist</summary>
-        <div class="card-content">
-            <label>Vali tööriist</label>
-            <select id="toolSelect" onchange="config.tool = this.value; switchTool(); saveConfig();">
-                <option value="presence">Presence (Pikslid)</option>
-                <option value="blob">Blob (Loendus)</option>
-            </select>
-            <div id="presenceSettings" class="tool-settings">
-                <label>Min. Pikslite arv: <b id="limitVal">5000</b></label>
-                <input type="range" id="limitInput" min="0" max="20000" value="5000" oninput="config.limit = this.value; saveConfig();">
+                    <!-- ROI SHAPE -->
+                    <hr class="section-divider">
+                    <h3 class="subsection-header">ROI Shape</h3>
+                    <div class="control-group">
+                        <label>
+                            <input type="radio" name="roiShape" value="rect" checked />
+                            Rectangle
+                        </label>
+                        <label>
+                            <input type="radio" name="roiShape" value="circle" />
+                            Circle
+                        </label>
+                    </div>
+                </div>
             </div>
-            <div id="blobSettings" class="tool-settings">
-                <label>Min. Pindala: <b id="minBlobVal">100</b></label>
-                <input type="range" id="minBlobInput" min="5" max="5000" value="100" oninput="config.minBlob = this.value; saveConfig();">
-                <label>Min kogus: <b id="minCountVal">1</b></label>
-                <input type="range" id="minCountInput" min="0" max="20" value="1" oninput="config.minCount = this.value; saveConfig();">
-                <label>Max kogus: <b id="maxCountVal">1</b></label>
-                <input type="range" id="maxCountInput" min="1" max="50" value="1" oninput="config.maxCount = this.value; saveConfig();">
+
+            <!-- 2. FILTERS SECTION -->
+            <div class="collapsible-section collapsed">
+                <h2 class="section-header" onclick="toggleSection(this)">
+                    <span class="toggle-icon">▼</span> <span class="section-number">2.</span> FILTERS
+                </h2>
+                <div class="section-content">
+                    <!-- THRESHOLD FILTER -->
+                    <div id="thresholdFilterSection" class="filter-section">
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="thresholdFilter" checked />
+                                Threshold
+                            </label>
+                        </div>
+                        <div id="thresholdControls" class="filter-controls">
+                            <input type="range" id="thresholdValue" min="0" max="255" value="128" class="slider">
+                            <span id="thresholdDisplay" class="slider-value">Value: 128</span>
+                        </div>
+                    </div>
+
+                    <!-- MORPHOLOGY FILTER -->
+                    <div id="morphFilterSection" class="filter-section">
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="morphFilter" />
+                                Morphology (Dilate)
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- INVERT FILTER -->
+                    <div id="invertFilterSection" class="filter-section">
+                        <div class="control-group">
+                            <label>
+                                <input type="checkbox" id="invertFilter" />
+                                Invert
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </details>
-</div>
 
-<div id="viewport"><div id="container"><video id="v" autoplay playsinline muted></video><canvas id="mainCanvas"></canvas></div></div>
+        </aside>
 
-<div class="sidebar sidebar-right">
-    <details open>
-        <summary>Eelvaade</summary>
-        <div class="card-content">
-            <div class="preview-container"><canvas id="previewCanvas"></canvas></div>
-            <div id="pxLive" style="text-align:center; font-family:monospace; color:var(--accent); margin-top:8px; font-size:12px;">...</div>
-        </div>
-    </details>
-    <details open>
-        <summary>Statistika & FPY</summary>
-        <div class="card-content">
-            <div class="stat-grid">
-                <div class="stat-box"><span id="countTotal">0</span><br><small>KOKKU</small></div>
-                <div class="stat-box"><span id="valFPY">0%</span><br><small>FPY</small></div>
-                <div class="stat-box" style="color:var(--ok)"><span id="countPass">0</span><br><small>PASS</small></div>
-                <div class="stat-box" style="color:var(--viga)"><span id="countFail">0</span><br><small>FAIL</small></div>
+        <!-- CENTER VIEWPORT -->
+        <main class="viewport">
+            <div id="cameraViewport" class="camera-viewport">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <div id="roiBox" class="roi-box">
+                    <div class="resize-handle tl"></div>
+                    <div class="resize-handle tr"></div>
+                    <div class="resize-handle bl"></div>
+                    <div class="resize-handle br"></div>
+                </div>
             </div>
-            <button onclick="resetStats()" style="margin-top:10px; font-size:10px; width:100%; cursor:pointer; background:transparent; border:1px solid #475569; color:white; padding:5px; border-radius:4px;">NULLI STATISTIKA</button>
-        </div>
-    </details>
-</div>
+        </main>
 
-<script async src="https://docs.opencv.org/4.5.4/opencv.js" onload="cvLoaded()"></script>
+        <!-- RIGHT SIDEBAR -->
+        <aside class="sidebar right-sidebar">
+            <!-- INSPECT BUTTON -->
+            <button id="inspectBtn" class="btn-inspect">INSPECT</button>
 
-<script>
-    const v = document.getElementById('v'), c = document.getElementById('mainCanvas'), ctx = c.getContext('2d');
-    const pCanvas = document.getElementById('previewCanvas');
-    const hCanvas = document.createElement('canvas'), hCtx = hCanvas.getContext('2d');
+            <h2>PROCESSED IMAGE</h2>
+            <div class="canvas-container">
+                <canvas id="processedCanvas" width="200" height="150"></canvas>
+            </div>
 
-    let config = JSON.parse(localStorage.getItem('aoi_config')) || { 
-        roi: { x: 50, y: 50, w: 150, h: 150 }, 
-        roiShape: 'rect', thr: 127, morph: 0, invert: false, tool: 'blob', limit: 5000, minBlob: 100, minCount: 1, maxCount: 1 
-    };
-    let stats = JSON.parse(localStorage.getItem('aoi_stats')) || { total: 0, pass: 0, fail: 0 };
-    let opencvReady = false, isDragging = false, isResizing = false, isOkNow = false;
-    let offset = { x: 0, y: 0 }, src, grey, thrMat;
+            <h2>INSPECTION RESULT (LIVE)</h2>
+            <div id="inspectionResult" class="inspection-result">
+                <div class="result-item">
+                    <span>Tool:</span>
+                    <span id="resultTool">-</span>
+                </div>
+                <div class="result-item">
+                    <span>Value:</span>
+                    <span id="resultValue" class="result-live-value">0</span>
+                </div>
+                <div class="result-item">
+                    <span>Limit:</span>
+                    <span id="resultLimit">0</span>
+                </div>
+                <div class="result-item">
+                    <span>Status:</span>
+                    <span id="resultStatus" class="result-status-neutral">-</span>
+                </div>
+            </div>
 
-    function cvLoaded() { opencvReady = true; loadUI(); switchTool(); render(); }
-    function loadUI() {
-        document.getElementById('thrInput').value = config.thr;
-        document.getElementById('morphInput').value = config.morph;
-        document.getElementById('invertInput').checked = config.invert;
-        document.getElementById('toolSelect').value = config.tool;
-        document.getElementById('roiShapeSelect').value = config.roiShape;
-        document.getElementById('limitInput').value = config.limit;
-        document.getElementById('minBlobInput').value = config.minBlob;
-        document.getElementById('minCountInput').value = config.minCount;
-        document.getElementById('maxCountInput').value = config.maxCount;
-    }
-    function switchTool() {
-        document.getElementById('presenceSettings').style.display = (config.tool === 'presence') ? 'block' : 'none';
-        document.getElementById('blobSettings').style.display = (config.tool === 'blob') ? 'block' : 'none';
-    }
-    function saveConfig() { localStorage.setItem('aoi_config', JSON.stringify(config)); }
-    function resetStats() { stats = { total: 0, pass: 0, fail: 0 }; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
-    function inspect() { stats.total++; if (isOkNow) stats.pass++; else stats.fail++; localStorage.setItem('aoi_stats', JSON.stringify(stats)); }
+            <h2>STATISTICS</h2>
+            <div class="stat-box">
+                <div class="stat-item">
+                    <span>PASS:</span>
+                    <span id="statPass" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>FAIL:</span>
+                    <span id="statFail" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>FPY%:</span>
+                    <span id="statFpy" class="stat-value">0%</span>
+                </div>
+                <button id="resetStatsBtn" class="btn-reset">RESET</button>
+            </div>
+        </aside>
+    </div>
 
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(stream => {
-        v.srcObject = stream;
-        v.onloadedmetadata = () => {
-            v.play();
-            setTimeout(() => { c.width = v.videoWidth; c.height = v.videoHeight; hCanvas.width = v.videoWidth; hCanvas.height = v.videoHeight; }, 1000);
-        };
-    });
-
-    c.onmousedown = (e) => {
-        const rect = c.getBoundingClientRect();
-        const px = (e.clientX - rect.left) * (c.width / rect.width);
-        const py = (e.clientY - rect.top) * (c.height / rect.height);
-        if (px > config.roi.x + config.roi.w - 35 && py > config.roi.y + config.roi.h - 35) isResizing = true;
-        else if (px > config.roi.x && px < config.roi.x + config.roi.w && py > config.roi.y && py < config.roi.y + config.roi.h) { isDragging = true; offset = { x: px - config.roi.x, y: py - config.roi.y }; }
-    };
-    window.onmousemove = (e) => {
-        if (!isDragging && !isResizing) return;
-        const rect = c.getBoundingClientRect();
-        const px = (e.clientX - rect.left) * (c.width / rect.width);
-        const py = (e.clientY - rect.top) * (c.height / rect.height);
-        if (isResizing) { config.roi.w = Math.max(30, px - config.roi.x); config.roi.h = Math.max(30, py - config.roi.y); }
-        else if (isDragging) { config.roi.x = px - offset.x; config.roi.y = py - offset.y; }
-    };
-    window.onmouseup = () => { isDragging = isResizing = false; saveConfig(); };
-
-    function render() {
-        if (opencvReady && v.readyState >= 2) {
-            try {
-                hCtx.drawImage(v, 0, 0, hCanvas.width, hCanvas.height);
-                if (!src) { src = new cv.Mat(v.videoHeight, v.videoWidth, cv.CV_8UC4); grey = new cv.Mat(); thrMat = new cv.Mat(); }
-                src.data.set(hCtx.getImageData(0,0,v.videoWidth, v.videoHeight).data);
-                
-                let rx = Math.max(0, Math.floor(config.roi.x)), ry = Math.max(0, Math.floor(config.roi.y));
-                let rw = Math.min(Math.floor(config.roi.w), src.cols - rx), rh = Math.min(Math.floor(config.roi.h), src.rows - ry);
-                
-                if (rw > 10 && rh > 10) {
-                    let roiMat = src.roi(new cv.Rect(rx, ry, rw, rh));
-                    cv.cvtColor(roiMat, grey, cv.COLOR_RGBA2GRAY);
-                    
-                    // 1. MASKIMINE HALLTOONIS (Enne thresholdi ja inverteerimist)
-                    let cleanMask = cv.Mat.zeros(rh, rw, cv.CV_8UC1);
-                    if (config.roiShape === 'circle') {
-                        cv.circle(cleanMask, new cv.Point(rw/2, rh/2), Math.min(rw, rh)/2 - 2, new cv.Scalar(255), -1);
-                    } else {
-                        cv.rectangle(cleanMask, new cv.Point(2,2), new cv.Point(rw-2, rh-2), new cv.Scalar(255), -1);
-                    }
-                    // Jätame alles ainult maski sisse jääva halltooni, ülejäänu on MUST (0)
-                    cv.bitwise_and(grey, cleanMask, grey);
-                    cleanMask.delete();
-
-                    // 2. THRESHOLD JA INVERTEERIMINE
-                    // Nüüd inverteeritakse ainult neid piksleid, mis on maski sees!
-                    // Sest väljaspool maski on pikslid väärtusega 0 ja need ei muutu valgeks.
-                    let type = config.invert ? (cv.THRESH_BINARY_INV | cv.THRESH_OTSU) : cv.THRESH_BINARY;
-                    if (!config.invert) {
-                        cv.threshold(grey, thrMat, parseInt(config.thr), 255, cv.THRESH_BINARY);
-                    } else {
-                        // Kui inverteerime, peame olema ettevaatlikud, et must taust ei muutuks valgeks.
-                        // Kasutame trikki: inverteerime pildi ja siis lõikame maskiga uuesti üle.
-                        cv.threshold(grey, thrMat, parseInt(config.thr), 255, cv.THRESH_BINARY_INV);
-                        let finalMask = cv.Mat.zeros(rh, rw, cv.CV_8UC1);
-                        if (config.roiShape === 'circle') {
-                            cv.circle(finalMask, new cv.Point(rw/2, rh/2), Math.min(rw, rh)/2 - 4, new cv.Scalar(255), -1);
-                        } else {
-                            cv.rectangle(finalMask, new cv.Point(4,4), new cv.Point(rw-4, rh-4), new cv.Scalar(255), -1);
-                        }
-                        cv.bitwise_and(thrMat, finalMask, thrMat);
-                        finalMask.delete();
-                    }
-
-                    // 3. MÜRA
-                    let mVal = parseInt(config.morph);
-                    if (mVal !== 0) {
-                        let k = cv.Mat.ones(Math.abs(mVal), Math.abs(mVal), cv.CV_8U);
-                        if (mVal < 0) cv.erode(thrMat, thrMat, k); else cv.dilate(thrMat, thrMat, k);
-                        k.delete();
-                    }
-
-                    pCanvas.width = rw; pCanvas.height = rh;
-
-                    if (config.tool === 'blob') {
-                        let contours = new cv.MatVector(), hierarchy = new cv.Mat();
-                        cv.findContours(thrMat, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-                        let displayMat = new cv.Mat(); cv.cvtColor(thrMat, displayMat, cv.COLOR_GRAY2RGBA);
-                        let count = 0, validContours = new cv.MatVector();
-                        for (let i = 0; i < contours.size(); ++i) {
-                            if (cv.contourArea(contours.get(i)) >= parseInt(config.minBlob)) { 
-                                count++; 
-                                validContours.push_back(contours.get(i)); 
-                            }
-                        }
-                        cv.drawContours(displayMat, validContours, -1, new cv.Scalar(0, 255, 255, 255), 2);
-                        isOkNow = (count >= parseInt(config.minCount) && count <= parseInt(config.maxCount));
-                        cv.imshow(pCanvas, displayMat);
-                        document.getElementById('pxLive').innerText = `BLOBS: ${count} / [${config.minCount}-${config.maxCount}]`;
-                        contours.delete(); hierarchy.delete(); displayMat.delete(); validContours.delete();
-                    } else {
-                        let px = cv.countNonZero(thrMat);
-                        isOkNow = px >= parseInt(config.limit);
-                        cv.imshow(pCanvas, thrMat);
-                        document.getElementById('pxLive').innerText = `PX: ${px} / MIN: ${config.limit}`;
-                    }
-                    roiMat.delete();
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        ctx.clearRect(0,0,c.width,c.height);
-        ctx.strokeStyle = isOkNow ? "#10b981" : "#f43f5e";
-        ctx.lineWidth = 3;
-        if (config.roiShape === 'circle') {
-            ctx.beginPath(); ctx.arc(config.roi.x + config.roi.w/2, config.roi.y + config.roi.h/2, Math.min(config.roi.w, config.roi.h)/2, 0, Math.PI*2); ctx.stroke();
-        } else {
-            ctx.strokeRect(config.roi.x, config.roi.y, config.roi.w, config.roi.h);
-        }
-        ctx.fillStyle = "white"; ctx.fillRect(config.roi.x + config.roi.w - 8, config.roi.y + config.roi.h - 8, 8, 8);
-
-        document.getElementById('mainStatus').innerText = isOkNow ? "PASS" : "FAIL";
-        document.getElementById('mainStatus').className = `status-hero ${isOkNow ? 'pass' : 'fail'}`;
-        document.getElementById('thrVal').innerText = config.thr;
-        document.getElementById('morphVal').innerText = config.morph;
-        document.getElementById('limitVal').innerText = config.limit;
-        document.getElementById('minBlobVal').innerText = config.minBlob;
-        document.getElementById('minCountVal').innerText = config.minCount;
-        document.getElementById('maxCountVal').innerText = config.maxCount;
-        document.getElementById('countTotal').innerText = stats.total;
-        document.getElementById('countPass').innerText = stats.pass;
-        document.getElementById('countFail').innerText = stats.fail;
-        document.getElementById('valFPY').innerText = (stats.total > 0 ? (stats.pass/stats.total*100).toFixed(1) : 0) + "%";
-        requestAnimationFrame(render);
-    }
-</script>
+    <script src="app.js"></script>
 </body>
 </html>
